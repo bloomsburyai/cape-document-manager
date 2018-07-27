@@ -7,6 +7,6 @@ In a nutshell, it serves as a document DB leveraging fulltext indexing.
 
 To integrate into your existing production infrastructure, you have 2 options:
 
-   * Faster to implement, DB independent : Implement the interface provided by `Retriever` in  [document_manager_core.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/document_manager_core.py)
-   * Slower to implement, optimized for your storage : Implement the interface provided by annotation and document stores in [annotation_store.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/annotation_store.py) and [document_store.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/document_store.py)
+   * **Faster to implement**, DB independent : Implement the interface provided by `Retriever` in  [document_manager_core.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/document_manager_core.py)
+   * Slower to implement, **optimized for your storage** : Implement the interface provided by annotation and document stores in [annotation_store.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/annotation_store.py) and [document_store.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/document_store.py)
 
