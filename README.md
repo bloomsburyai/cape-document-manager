@@ -3,7 +3,8 @@
 This implementation is meant to demonstrate how to integrate a document manager with retrieval in your existing infrastructure.
 In a nutshell, it serves as a document DB leveraging fulltext indexing.
 
-#Integration options
+## Integration options
+
 To integrate into your existing production infrastructure, you have 2 options:
 
    * Faster to implement, DB independent : Implement the interface provided by `Retriever` in  [document_manager_core.py](https://github.com/bloomsburyai/cape-document-manager/blob/master/cape_document_manager/document_manager_core.py)
