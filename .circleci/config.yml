@@ -19,7 +19,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip3 install --upgrade pip
-            CAPE_DEPENDENCIES=True pip3 install --upgrade git+https://github.com/bloomsburyai/cape-document-manager
+            pip3 install --process-dependency-links --upgrade git+https://github.com/bloomsburyai/cape-document-manager
 
       - save_cache:
           paths:
