@@ -6,7 +6,7 @@ import urllib.request
 from functools import lru_cache
 
 
-@lru_cache
+@lru_cache(maxsize=50)
 def _get_github_sha(github_install_url: str):
     """From the github_install_url get the hash of the latest commit"""
     repository = Path(github_install_url).stem.split('#egg', 1)[0]
