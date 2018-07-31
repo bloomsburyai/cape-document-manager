@@ -24,7 +24,7 @@ setup(
     packages=PACKAGES,
     include_package_data=True,
     install_requires=[
-        'pytest==3.2.3',
+        'pytest==3.6.4',
         'peewee==3.5.2',
         'scout==3.0.2',
         'dataclasses==0.6',
