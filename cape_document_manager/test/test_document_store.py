@@ -132,14 +132,14 @@ def test_simple_search(reset_db):
     assert len(DocumentStore.get_documents(_LOGIN, search_term='f80q35jf98')) == 0
     assert DocumentStore.get_documents(_LOGIN, search_term='one')[0]['text'] == _DOCUMENT_TEXTS[3]
 
-def test_chunk_search(reset_db):
-    get_embeddings_function = len #in prod this would be the embedding generation function
 
-    #Insert document in DB
+def test_chunk_search(reset_db):
+    get_embeddings_function = len  # in prod this would be the embedding generation function
+
+    # Insert document in DB
     for idx, doc_text in enumerate(_DOCUMENT_TEXTS):
         DocumentStore.create_document(_LOGIN, 'Title of doc %d' % idx, 'test', doc_text,
                                       get_embedding=get_embeddings_function)
-
 
     # Get the search results of chunks, with a single SQL query,
     # do this if all you need is the number of results and/or text content and/or confidence scores
@@ -162,36 +162,54 @@ def test_chunk_search(reset_db):
     #              "'dd5c8526091ce0e937a062da23833808b4e54d9ce41cdc101173265b6a718bbd')",
     # 'user_id': 'bla@bla.com'}
     fields = matched_results[0].get_indexable_string_fields()
-    assert fields['embedding'] == str(len(matched_results[0].matched_content)) # in prod would be string of an array
+    assert fields['embedding'] == str(len(matched_results[0].matched_content))  # in prod would be string of an array
 
     # Only if absolutely necessary but should not be used when machine reading
     # you can retrieve the full DocumentRecord object
     # which includes all chunks, this is "slow" as we are unpickling from the DB
-    document_record : DocumentRecord = matched_results[0].get_retrievable()
-    assert document_record.unique_id == str((document_record.user_id,document_record.document_id))
+    document_record: DocumentRecord = matched_results[0].get_retrievable()
+    assert document_record.unique_id == str((document_record.user_id, document_record.document_id))
     assert document_record.text == _DOCUMENT_TEXTS[0]
-    assert isinstance(next(iter(document_record.chunks.values())),DocumentChunk)
+    assert isinstance(next(iter(document_record.chunks.values())), DocumentChunk)
     assert len(document_record.chunks) == 1
 
     # pprint(document_record)
 
+
 def test_exact_match(reset_db):
-    #Insert document in DB
+    # Insert document in DB
     for idx, doc_text in enumerate(_DOCUMENT_TEXTS):
         DocumentStore.create_document(_LOGIN, 'Title of doc %d' % idx, 'test', doc_text)
 
-    #exact match is expected to return a perfect score
+    # exact match is expected to return a perfect score
     matched_results = list(DocumentStore.search_chunks(_LOGIN, 'one plus one makes two'))
     assert matched_results[0].matched_content == 'one plus one makes two'
     assert matched_results[0].matched_score == 1.0
 
-    #close match is expected when the punctuation and trailing spaces are removed
+    # close match is expected when the punctuation and trailing spaces are removed
     matched_results = list(DocumentStore.search_chunks(_LOGIN, ' one ,plus+ one makes two !!'))
     assert matched_results[0].matched_content == 'one plus one makes two'
     assert matched_results[0].matched_score == 0.99
 
 
+def test_limit_results(reset_db):
+    # Insert document in DB
+    for idx, doc_text in enumerate(_DOCUMENT_TEXTS):
+        DocumentStore.create_document(_LOGIN, 'Title of doc %d' % idx, 'test', doc_text)
+
+    # exact match is expected to return a perfect score
+    all_matched_results = list(DocumentStore.search_chunks(_LOGIN, 'one plus one makes two'))
+    limited_matched_results = list(DocumentStore.search_chunks(_LOGIN, 'one plus one makes two', limit_per_doc=1))
+    assert len(all_matched_results) > len(limited_matched_results)
+    assert len(limited_matched_results) == 1
+    assert all_matched_results[0].matched_content == limited_matched_results[0].matched_content
+    limited_matched_results = list(DocumentStore.search_chunks(_LOGIN, 'one plus one makes two', limit_per_doc=2))
+    assert len(all_matched_results) > len(limited_matched_results)
+    assert len(limited_matched_results) == 2
+    assert all_matched_results[0].matched_content == limited_matched_results[0].matched_content
+    assert all_matched_results[1].matched_content == limited_matched_results[1].matched_content
+
 if __name__ == '__main__':
     print("Launching single test")
-    test_create_and_delete(reset_db())
+    test_limit_results(reset_db())
     print("Done")

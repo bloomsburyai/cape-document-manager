@@ -1,5 +1,5 @@
 import re
-from typing import List, Callable, Iterable, Dict, Any, Union, Generator
+from typing import List, Callable, Iterable, Dict, Any, Union, Generator, Optional
 from peewee import ModelSelect, JOIN, fn
 from hashlib import sha256
 import pickle
@@ -11,11 +11,27 @@ from cape_document_manager.tables import Index, database, BlobData, Metadata, In
     DocumentSearch
 from functools import lru_cache
 from cape_document_manager.document_manager_settings import LOCAL_UNPICKLING_LRU_CACHE_MAX_SIZE
+from itertools import cycle, islice
 
 AUTOFILL = "AUTO_FILL"
 _MAX_RETRIEVER_SCORE = 0.98
 _CASE_INVARIANT_NO_PUNCTUATION_SCORE = 0.99
 _NON_WORD_CHARS = re.compile('[^0-9a-zA-Z\s]')
+
+
+def roundrobin(*iterables):
+    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    # Recipe credited to George Sakkis
+    num_active = len(iterables)
+    nexts = cycle(iter(it).__next__ for it in iterables)
+    while num_active:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            # Remove the iterator we just exhausted from the cycle.
+            num_active -= 1
+            nexts = cycle(islice(nexts, num_active))
 
 
 @dataclass
@@ -163,7 +179,7 @@ class Retriever():
         """Proxy a retriever by making a sqllite full-text search with optional tokens."""
         return '"' + '" OR "'.join(re.sub(_NON_WORD_CHARS, "", query.lower().strip()).split()) + '"'
 
-    def retrieve(self, query: str, **keys) -> Generator[SearchResult, None, None]:
+    def retrieve(self, query: str, limit: Optional[int] = None, **keys) -> Generator[SearchResult, None, None]:
         yield from (
             SearchResult(
                 original_query=query,
@@ -172,7 +188,7 @@ class Retriever():
                 _scout_result=result)
             for result in
             DocumentSearch().search(phrase=self._query_to_phrase(query), index=self.indexes, ranking='rank_similarity',
-                                    **self._searchable_keys(keys)))
+                                    **self._searchable_keys(keys)).limit(limit))
 
     def get(self, exception_to_raise_on_empty=None, **keys) -> Generator[Retrievable, None, None]:
         for key, value in keys.items():

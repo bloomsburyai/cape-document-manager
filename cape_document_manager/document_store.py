@@ -2,12 +2,12 @@ from typing import List, Dict, Iterable, Optional, Tuple, Any, Callable, Generat
 
 from cape_splitter.splitter_core import Splitter
 
-from cape_document_manager.document_manager_core import Retriever, Retrievable, Indexable, AUTOFILL, SearchResult
+from cape_document_manager.document_manager_core import Retriever, Retrievable, Indexable, AUTOFILL, SearchResult, \
+    roundrobin
 from cape_api_helpers.exceptions import UserException
 from cape_api_helpers.text_responses import *
 import calendar
 from dataclasses import dataclass, field
-from itertools import chain
 from datetime import datetime
 from hashlib import sha256
 
@@ -99,8 +99,8 @@ class DocumentStore:
             selections_kwargs = [{'document_id': document_id, **selection}
                                  for document_id in document_ids
                                  for selection in selections_kwargs]
-        docs: Iterable[DocumentRecord] = chain.from_iterable(
-            DocumentStore._retriever.get(**selection) for selection in selections_kwargs)
+        docs: Iterable[DocumentRecord] = roundrobin(*(DocumentStore._retriever.get(**selection)
+                                                      for selection in selections_kwargs))
         return [{"id": doc.document_id,
                  "title": doc.title,
                  "origin": doc.origin,
@@ -110,12 +110,14 @@ class DocumentStore:
                  } for doc in docs]
 
     @staticmethod
-    def search_chunks(user_id: str, query: str, document_ids: List[str] = ()) -> Generator[SearchResult, None, None]:
+    def search_chunks(user_id: str, query: str, document_ids: List[str] = (), limit_per_doc: Optional[int] = None) -> \
+            Generator[SearchResult, None, None]:
         selections_kwargs = [{'user_id': user_id}]
         if document_ids:
             selections_kwargs = [{'document_id': document_id, **selection}
                                  for document_id in document_ids
                                  for selection in selections_kwargs]
-        search_results: Iterable[SearchResult] = chain.from_iterable(
-            DocumentStore._retriever.retrieve(query=query, **selection) for selection in selections_kwargs)
+        search_results: Iterable[SearchResult] = roundrobin(*(
+            DocumentStore._retriever.retrieve(query=query, limit=limit_per_doc, **selection)
+            for selection in selections_kwargs))
         yield from search_results

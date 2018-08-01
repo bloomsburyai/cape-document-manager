@@ -1,7 +1,8 @@
 import random
 from collections import OrderedDict
 from typing import List, Dict, Iterable, Optional
-from cape_document_manager.document_manager_core import Retriever, Retrievable, Indexable, AUTOFILL, SearchResult
+from cape_document_manager.document_manager_core import Retriever, Retrievable, Indexable, AUTOFILL, SearchResult, \
+    roundrobin
 from cape_api_helpers.exceptions import UserException
 from cape_api_helpers.text_responses import *
 import calendar
@@ -104,8 +105,8 @@ class AnnotationStore:
         elif saved_replies is False:
             selections_kwargs[0]['document_id__ne'] = None
 
-        annotation_results: Iterable[SearchResult] = chain.from_iterable(
-            AnnotationStore._retriever.retrieve(similar_query, **selection) for selection in selections_kwargs)
+        annotation_results: Iterable[SearchResult] = roundrobin(*(
+            AnnotationStore._retriever.retrieve(similar_query, **selection) for selection in selections_kwargs))
         seen = set()
         seen_add = seen.add
         similar_annotations = []
@@ -157,8 +158,8 @@ class AnnotationStore:
             selections_kwargs = [{'page': page, **selection}
                                  for page in pages
                                  for selection in selections_kwargs]
-        annotations: Iterable[Annotation] = chain.from_iterable(
-            AnnotationStore._retriever.get(**selection) for selection in selections_kwargs)
+        annotations: Iterable[Annotation] = roundrobin(*(
+            AnnotationStore._retriever.get(**selection) for selection in selections_kwargs))
         return list(OrderedDict(
             (annotation.unique_id, {"id": annotation.unique_id,
                                     "canonicalQuestion": annotation.canonical.content,
