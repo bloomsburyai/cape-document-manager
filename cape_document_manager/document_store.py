@@ -71,7 +71,9 @@ class DocumentStore:
             document_id = sha256(text.encode('utf-8')).hexdigest()
         fields = dict(user_id=user_id, title=title, document_id=document_id, origin=origin, text=text,
                       document_type=document_type)
-        if get_embedding is not None:
+        if get_embedding is None:
+            fields['get_embedding'] = DocumentStore.get_empty_embedding
+        else:
             fields['get_embedding'] = get_embedding
         document = DocumentRecord(**fields)
         if not replace:
@@ -121,3 +123,7 @@ class DocumentStore:
             DocumentStore._retriever.retrieve(query=query, limit=limit_per_doc, **selection)
             for selection in selections_kwargs))
         yield from search_results
+
+    @staticmethod
+    def get_empty_embedding(text: str):
+        return ''
